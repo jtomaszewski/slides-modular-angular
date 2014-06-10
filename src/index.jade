@@ -1,0 +1,56 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1, maximum-scale=1')
+    title Modular angular
+
+    // build:css styles/styles.css
+    link(rel='stylesheet', type='text/css', href='bower_components/prism/themes/prism-okaidia.css')
+    link(rel='stylesheet', type='text/css', href='styles/main.css')
+    // endbuild
+
+  body
+
+    article
+
+      section
+        h1.smaller Modular Angular
+        h3.smaller 
+          | Services, factories, providers. 
+          br
+          | Resources, wrappers, modules.
+        .author
+          | by 
+          strong
+            a(href="http://jtom.me") jacek@jtom.me
+
+      section
+        h1.smaller Thank you! =)
+
+        h3 Any questions?
+
+        .author.footer
+          | by 
+          strong
+            a(href="http://jtom.me") jacek@jtom.me
+
+      //- section(data-bespoke-state='emphatic')
+      //-   h2 Emphatic Slide!
+      //-   h3 Powered by <a href="https://github.com/markdalgleish/bespoke-state">bespoke-state</a>
+
+    // build:js scripts/scripts.js
+    script(src='bower_components/bespoke.js/dist/bespoke.min.js')
+    script(src='bower_components/bespoke-keys/dist/bespoke-keys.min.js')
+    script(src='bower_components/bespoke-touch/dist/bespoke-touch.min.js')
+    script(src='bower_components/bespoke-bullets/dist/bespoke-bullets.min.js')
+    script(src='bower_components/bespoke-scale/dist/bespoke-scale.min.js')
+    script(src='bower_components/bespoke-hash/dist/bespoke-hash.min.js')
+    script(src='bower_components/bespoke-progress/dist/bespoke-progress.min.js')
+    script(src='bower_components/bespoke-state/dist/bespoke-state.min.js')
+    script(src='bower_components/bespoke-convenient/dist/bespoke-convenient.min.js')
+    script(src='bower_components/bespoke-indexfinger/dist/bespoke-indexfinger.min.js')
+    script(src='bower_components/bespoke-secondary/dist/bespoke-secondary.min.js')
+    script(src='bower_components/prism/prism.js')
+    script(src='scripts/main.js')
+    // endbuild
