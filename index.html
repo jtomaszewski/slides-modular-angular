@@ -192,6 +192,13 @@ function factory(name, factoryFn) {
     }
   };
 });
+
+// USAGE
+app.controller("FooController", function(Auth) {
+  $scope.login = function() {
+    Auth.login($scope.username);
+  };
+});
 </code></pre>
         <h4 class="bullet">When injecting, Angular calls the AuthFactory function and stores it's value.</h4>
         <h4 class="bullet">AuthFactory is initialized only once, on first demand - after that, the previous [cached] value gets retrieved.</h4>
@@ -207,6 +214,19 @@ function service(name, constructor) {
         <h4 class="bullet">service() is just a wrapper around the factory() method</h4>
         <h4 class="bullet">You can easily achieve .service() effect by using .factory() method.</h4>
         <h4 class="red bullet">There are no other differences.</h4>
+      </section>
+      <section>
+        <h3 class="red">Service vs Factory</h3>
+        <pre class="small"><code class="language-javascript bullet">angular.factory('myFactory', myFactoryFunction);
+angular.service('myService', myServiceFunction);
+
+</code><code class="language-javascript bullet">// Factory: the function that you write will be invoked:
+myInjectedFactory  <---  myFactoryFunction()
+
+</code><code class="language-javascript bullet">// Service: the function that you write will be new-ed:
+myInjectedService  <---  new myServiceFunction()
+
+</code></pre>
       </section>
       <section>
         <h4 class="bullet">The only difference between the<span class="red"> service</span><span> and the</span><span class="red"> factory </span><span> is the </span><code class="red"> $injector.instantiate()</code></h4>
@@ -228,9 +248,7 @@ function instantiate(Type, locals) {
       </section>
       <section>
         <h3 class="bullet">These are the same</h3>
-        <ul class="halfs">
-          <li>
-            <pre class="small"><code class="language-javascript">function Auth() {
+        <pre class="small"><code class="language-javascript">function AuthFactory() {
   var currentUser;
   function loginAsAdmin() {
     currentUser = {id: 1};
@@ -244,31 +262,23 @@ function instantiate(Type, locals) {
     }
   };
 }
-
-app.service("Auth", Auth);
-
-</code><code class="language-javascript bullet">// `Auth` is an object
+</code></pre>
+        <ul class="halfs">
+          <li>
+            <pre class="small noscrollbars bullet"><code class="language-javascript">app.service("Auth", AuthFactory);</code></pre>
+          </li>
+          <li>
+            <pre class="small noscrollbars bullet"><code class="language-javascript">app.factory("Auth", AuthFactory);
+</code></pre>
+          </li>
+        </ul>
+        <ul class="halfs">
+          <li>
+            <pre class="small noscrollbars bullet"><code class="language-javascript">// `Auth` is an object
 // with `.login()` method</code></pre>
           </li>
           <li>
-            <pre class="small"><code class="language-javascript">function Auth() {
-  var currentUser;
-  function loginAsAdmin() {
-    currentUser = {id: 1};
-  }
-  
-  return {
-    login: function login(name) {
-      if (name == "obama") {
-        loginAsAdmin();
-      }
-    }
-  };
-}
-
-app.factory("Auth", Auth);
-
-</code><code class="language-javascript bullet">// `Auth` is an object
+            <pre class="small noscrollbars bullet"><code class="language-javascript">// `Auth` is an object
 // with `.login()` method
 </code></pre>
           </li>
@@ -276,43 +286,29 @@ app.factory("Auth", Auth);
       </section>
       <section>
         <h3 class="bullet">These are not the same</h3>
+        <pre class="small"><code class="language-javascript">function AuthClass() {
+  var currentUser;
+  
+  function loginAsAdmin() {
+    currentUser = {id: 1};
+  }
+  
+  this.login = function login(name) {
+    if (name == "obama") {
+      loginAsAdmin();
+    }
+  };
+}
+</code></pre>
         <ul class="halfs">
           <li>
-            <pre class="small"><code class="language-javascript">function Auth() {
-  var currentUser;
-  
-  function loginAsAdmin() {
-    currentUser = {id: 1};
-  }
-  
-  this.login = function login(name) {
-    if (name == "obama") {
-      loginAsAdmin();
-    }
-  };
-}
-
-app.service("Auth", Auth);
+            <pre class="small noscrollbars"><code class="language-javascript bullet">app.service("Auth", AuthClass);
 
 </code><code class="language-javascript bullet">// `Auth` is an object
-// with `.login(), ._loginAsAdmin, ._user` properties</code></pre>
+// with `.login()` method</code></pre>
           </li>
           <li>
-            <pre class="small"><code class="language-javascript">function Auth() {
-  var currentUser;
-  
-  function loginAsAdmin() {
-    currentUser = {id: 1};
-  }
-  
-  this.login = function login(name) {
-    if (name == "obama") {
-      loginAsAdmin();
-    }
-  };
-}
-
-app.factory("Auth", Auth);
+            <pre class="small noscrollbars"><code class="language-javascript bullet">app.factory("Auth", AuthClass);
 
 </code><code class="language-javascript bullet">// `Auth` is undefined
 </code></pre>

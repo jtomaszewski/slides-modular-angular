@@ -248,6 +248,13 @@ html
               };
             });
 
+            // USAGE
+            app.controller("FooController", function(Auth) {
+              $scope.login = function() {
+                Auth.login($scope.username);
+              };
+            });
+
         h4.bullet When injecting, Angular calls the AuthFactory function and stores it's value.
         h4.bullet AuthFactory is initialized only once, on first demand - after that, the previous [cached] value gets retrieved.
 
@@ -264,6 +271,24 @@ html
         h4.bullet service() is just a wrapper around the factory() method
         h4.bullet You can easily achieve .service() effect by using .factory() method.
         h4.red.bullet There are no other differences.
+
+      section
+        h3.red Service vs Factory
+        pre.small
+          code.language-javascript.bullet.
+            angular.factory('myFactory', myFactoryFunction);
+            angular.service('myService', myServiceFunction);
+
+
+          code.language-javascript.bullet.
+            // Factory: the function that you write will be invoked:
+            myInjectedFactory  <---  myFactoryFunction()
+
+
+          code.language-javascript.bullet.
+            // Service: the function that you write will be new-ed:
+            myInjectedService  <---  new myServiceFunction()
+              
 
       section
         h4.bullet 
@@ -303,102 +328,79 @@ html
 
       section
         h3.bullet These are the same
+        pre.small
+          code.language-javascript.
+            function AuthFactory() {
+              var currentUser;
+              function loginAsAdmin() {
+                currentUser = {id: 1};
+              }
+
+              return {
+                login: function login(name) {
+                  if (name == "obama") {
+                    loginAsAdmin();
+                  }
+                }
+              };
+            }
+
         ul.halfs
           li
-            pre.small
+            pre.small.noscrollbars.bullet
               code.language-javascript.
-                function Auth() {
-                  var currentUser;
-                  function loginAsAdmin() {
-                    currentUser = {id: 1};
-                  }
+                app.service("Auth", AuthFactory);
+          li
+            pre.small.noscrollbars.bullet
+              code.language-javascript.
+                app.factory("Auth", AuthFactory);
 
-                  return {
-                    login: function login(name) {
-                      if (name == "obama") {
-                        loginAsAdmin();
-                      }
-                    }
-                  };
-                }
-
-                app.service("Auth", Auth);
-
-
-              code.language-javascript.bullet.
+        ul.halfs
+          li
+            pre.small.noscrollbars.bullet
+              code.language-javascript.
                 // `Auth` is an object
                 // with `.login()` method
           li
-            pre.small
+            pre.small.noscrollbars.bullet
               code.language-javascript.
-                function Auth() {
-                  var currentUser;
-                  function loginAsAdmin() {
-                    currentUser = {id: 1};
-                  }
-
-                  return {
-                    login: function login(name) {
-                      if (name == "obama") {
-                        loginAsAdmin();
-                      }
-                    }
-                  };
-                }
-
-                app.factory("Auth", Auth);
-
-
-              code.language-javascript.bullet.
                 // `Auth` is an object
                 // with `.login()` method
 
       section
         h3.bullet These are not the same
+        pre.small
+          code.language-javascript.
+            function AuthClass() {
+              var currentUser;
+              
+              function loginAsAdmin() {
+                currentUser = {id: 1};
+              }
+
+              this.login = function login(name) {
+                if (name == "obama") {
+                  loginAsAdmin();
+                }
+              };
+            }
+
         ul.halfs
           li
-            pre.small
-              code.language-javascript.
-                function Auth() {
-                  var currentUser;
-                  
-                  function loginAsAdmin() {
-                    currentUser = {id: 1};
-                  }
-
-                  this.login = function login(name) {
-                    if (name == "obama") {
-                      loginAsAdmin();
-                    }
-                  };
-                }
-
-                app.service("Auth", Auth);
+            pre.small.noscrollbars
+              code.language-javascript.bullet.
+                app.service("Auth", AuthClass);
 
 
               code.language-javascript.bullet.
                 // `Auth` is an object
-                // with `.login(), ._loginAsAdmin, ._user` properties
+                // with `.login()` method
           li
-            pre.small
-              code.language-javascript.
-                function Auth() {
-                  var currentUser;
+            pre.small.noscrollbars
+              code.language-javascript.bullet.
+                app.factory("Auth", AuthClass);
+
                   
-                  function loginAsAdmin() {
-                    currentUser = {id: 1};
-                  }
-
-                  this.login = function login(name) {
-                    if (name == "obama") {
-                      loginAsAdmin();
-                    }
-                  };
-                }
-
-                app.factory("Auth", Auth);
-
-
               code.language-javascript.bullet.
                 // `Auth` is undefined
 

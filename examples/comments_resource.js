@@ -9,10 +9,10 @@ app.service('CommentsResource', function($resource, BACKEND_URL) {
   return {
     $resource: $res,
 
-    getAllForActivity: function(activity_id, params) {
-      return $res.query(angular.extend(params || {}, {
+    getAll: function(activity_id) {
+      return $res.query({
         activity_id: activity_id
-      }));
+      });
     },
 
     create: function(activity_id, comment) {
