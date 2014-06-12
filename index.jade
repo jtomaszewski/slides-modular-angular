@@ -1,0 +1,662 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1, maximum-scale=1')
+    title Modular angular
+
+    // build:css styles/styles.css
+    link(rel='stylesheet', type='text/css', href='bower_components/prism/themes/prism-okaidia.css')
+    link(rel='stylesheet', type='text/css', href='styles/main.css')
+    // endbuild
+
+  body
+
+    article
+
+      section
+        h1.smaller Modular Angular
+        h3.smaller 
+          | Providers, services, factories.
+          br
+          | Resources, wrappers, modules.
+        .author
+          | by 
+          strong
+            a(href="http://jtom.me") jacek@jtom.me
+
+      section
+        h2 Basics first
+        h4 How does the angular invoke services?
+
+      section
+        h3.red $injector.invoke example
+        pre.small
+          code.language-javascript.bullet.
+            var app = angular.module("app");
+
+            app.controller("UsersController", function UsersController($scope, UsersResource) {
+              $scope.users = UsersResource.getAll();
+            });
+
+        ol.alignleft
+          li.bullet Angular runs `$injector.invoke()` on the `UsersController` function
+          li.bullet $injector parses the function's arguments into a string array: ["$scope", "UsersResource"]
+          li.bullet For every passed argument, it runs `getService(serviceName)`: which initializes the service OR if already initialized, gets it from the cache
+          li.bullet Finally, runs the `UsersController` function with injected services returns the function's value: `return fn.apply(context, services);`
+
+      section
+        h4.red Example
+        pre.small
+          code.language-javascript.bullet.
+            app.factory("CarsResource", function(){
+              return {
+                getAll: function() {
+                  return [{name: "Ferrari"}];
+                }
+              };
+            });
+
+
+          code.language-javascript.bullet.
+            // ... somewhere in the controller
+            app.controller("CarsController", function ($scope, CarsResource) {
+              $scope.cars = CarsResource.getAll();
+            });
+
+      section
+        h2 Part I
+        h3.bullet Providers, services, factories.
+        h4.bullet What are they and what is the difference?
+
+      section 
+        h2.bullet Let's read the docs... (RTFM)
+        blockquote.alignleft
+          p
+            strong.bullet 
+              | Source: 
+              a(href="https://docs.angularjs.org/api/auto/object/$provide") docs.angularjs.org
+          p.bullet
+            | An Angular 
+            strong.red service 
+            | is a singleton object created by a 
+            strong.red service factory
+            | .
+          p.bullet
+            | These 
+            strong.red service factories 
+            | are functions which, in turn, are created by a 
+            strong.red service provider
+            | . 
+          p.bullet
+            | The 
+            strong.red service providers 
+            | are constructor functions. When instantiated they must contain a 
+            | property called 
+            code
+              span.pln $get
+            | , which holds the 
+            strong.red service factory 
+            | function.
+        img.bullet(src="http://scottunder.typepad.com/.a/6a01156f1acace970c0120a59d496c970b-pi", alt="Did you mean recursion?")
+        aside Did you mean recursion? (Google)
+
+      section
+        h2.bullet ... let's start from the code
+        h3 and translate the docs word by word
+
+      section
+        h4.bullet
+          | "The 
+          strong.red service providers 
+          | are constructor functions. When instantiated they must contain a 
+          | property called 
+          code
+            span.pln $get
+          | , which holds the 
+          strong.red service factory 
+          | function"
+
+      section
+        h3.red Provider example
+        pre.small.bullet
+          code.language-javascript.
+            app.provider("Greeter", function GreeterFactoryProvider() {
+              // $get method initializes the factory
+              this.$get = function GreeterFactory() {
+                return {
+                  sayHello: function() {
+                    return "hello";
+                  }
+                };
+              };
+            });
+
+            // USAGE
+            app.run(function(Greeter){
+              console.log(Greeter.sayHello());
+            });
+
+      section
+        h3.red Provider example with configuration
+        pre.small.bullet
+          code.language-javascript.
+            app.provider("Greeter", function GreeterFactoryProvider() {
+              // private, local variable 
+              var options = { locale: "en" };
+
+              // public method available only in the .config() phase
+              this.setLocale = function(locale) {
+                options.locale = locale;
+              };
+
+              // $get method initializes the factory
+              this.$get = function GreeterFactory() {
+                return {
+                  sayHello: function() {
+                    return options.locale == "en" ? "hello" : "hola";
+                  }
+                };
+              };
+            });
+
+            // USAGE
+            app.config(function(GreeterProvider){
+              GreeterProvider.setLocale("es");
+            });
+
+            app.run(function(Greeter){
+              console.log(Greeter.sayHello());
+            });
+
+      section
+        h3.red Provider example - more usable
+        pre.small.bullet
+          code.language-javascript.
+            app.provider('myFacebook', function() {
+              // private, local variable
+              var initParams = {};
+
+              // public method available only in the .config() phase
+              this.init = function (appId) {
+                initParams.appId = appId;
+                FB.init(initParams);
+              };
+
+              // $get: defines the `myFacebook` singleton service
+              this.$get = function ($q) {
+                return {
+                  // public method, available as `myFacebook.login()` in the controllers
+                  login: function () {
+                    var deferred = $q.defer();
+                    FB.login(deferred.resolve)
+                    return deferred.promise;
+                  }
+                }
+              };
+            };
+
+            // Usage
+            // Let's configure the myFacebook service
+            // Beware:
+            // - myFacebookProvider is only visible in the app.config phase.
+            // - we cannot access `myFacebook` service here yet.
+            app.config(function(myFacebookProvider){
+              myFacebookProvider.init("123");
+            });
+
+            // Finally, let's use the myFacebook service.
+            app.controller("LoginController", function(myFacebook){
+              $scope.login = function() {
+                myFacebook.login();
+              };
+            })
+
+      section
+        h4.bullet 
+          | "
+          span.red Service factories
+          |  are functions created by a 
+          span.red service provider
+          | "
+        pre.small
+          code.language-javascript.bullet.
+            // source code taken straight from angular.js
+            function factory(name, factoryFn) { 
+              return provider(name, { 
+                $get: factoryFn 
+              }); 
+            }
+        h4.bullet Factory is just a provider with $get method and no configuration.
+
+      section
+        h3.red Factory example
+        pre.small
+          code.language-javascript.bullet.
+            app.factory("Auth", function AuthFactory(){
+              var currentUser;
+              function loginAsAdmin() {
+                currentUser = {id: 1};
+              }
+
+              return {
+                login: function login(name) {
+                  if (name == "obama") {
+                    loginAsAdmin();
+                  }
+                }
+              };
+            });
+
+        h4.bullet When injecting, Angular calls the AuthFactory function and stores it's value.
+        h4.bullet AuthFactory is initialized only once, on first demand - after that, the previous [cached] value gets retrieved.
+
+      section
+        h4.bullet "Service (...) is created by a service factory"
+        pre.small
+          code.language-javascript.bullet.
+            // source code taken straight from angular.js
+            function service(name, constructor) {
+              return factory(name, ['$injector', function($injector) {
+                return $injector.instantiate(constructor);
+              }]);
+            }
+        h4.bullet service() is just a wrapper around the factory() method
+        h4.bullet You can easily achieve .service() effect by using .factory() method.
+        h4.red.bullet There are no other differences.
+
+      section
+        h4.bullet 
+          | The only difference between the
+          span.red  service
+          span  and the
+          span.red  factory 
+          span  is the 
+          code.red  $injector.instantiate()
+
+        pre.small.bullet
+          code.language-javascript.
+            // source code taken straight from angular.js
+            function instantiate(Type, locals) {
+              var Constructor = function() {},
+                  instance, returnedValue;
+
+              Constructor.prototype = Type.prototype;
+              instance = new Constructor();
+              returnedValue = invoke(Type, instance, locals);
+
+              return isObject(returnedValue) || isFunction(returnedValue) ? returnedValue : instance;
+            }
+
+        blockquote.bullet
+          strong In short:
+          code  instantiate(Car)
+          |  will 
+          span.red  return a new Car instance
+          | ,
+          br
+          span.red UNLESS
+          |  the Constructor method (function Car(){}) returns something: 
+          | then it 
+          span.red  returns the returned object
+          | .
+
+      section
+        h3.bullet These are the same
+        ul.halfs
+          li
+            pre.small
+              code.language-javascript.
+                function Auth() {
+                  var currentUser;
+                  function loginAsAdmin() {
+                    currentUser = {id: 1};
+                  }
+
+                  return {
+                    login: function login(name) {
+                      if (name == "obama") {
+                        loginAsAdmin();
+                      }
+                    }
+                  };
+                }
+
+                app.service("Auth", Auth);
+
+
+              code.language-javascript.bullet.
+                // `Auth` is an object
+                // with `.login()` method
+          li
+            pre.small
+              code.language-javascript.
+                function Auth() {
+                  var currentUser;
+                  function loginAsAdmin() {
+                    currentUser = {id: 1};
+                  }
+
+                  return {
+                    login: function login(name) {
+                      if (name == "obama") {
+                        loginAsAdmin();
+                      }
+                    }
+                  };
+                }
+
+                app.factory("Auth", Auth);
+
+
+              code.language-javascript.bullet.
+                // `Auth` is an object
+                // with `.login()` method
+
+      section
+        h3.bullet These are not the same
+        ul.halfs
+          li
+            pre.small
+              code.language-javascript.
+                function Auth() {
+                  var currentUser;
+                  
+                  function loginAsAdmin() {
+                    currentUser = {id: 1};
+                  }
+
+                  this.login = function login(name) {
+                    if (name == "obama") {
+                      loginAsAdmin();
+                    }
+                  };
+                }
+
+                app.service("Auth", Auth);
+
+
+              code.language-javascript.bullet.
+                // `Auth` is an object
+                // with `.login(), ._loginAsAdmin, ._user` properties
+          li
+            pre.small
+              code.language-javascript.
+                function Auth() {
+                  var currentUser;
+                  
+                  function loginAsAdmin() {
+                    currentUser = {id: 1};
+                  }
+
+                  this.login = function login(name) {
+                    if (name == "obama") {
+                      loginAsAdmin();
+                    }
+                  };
+                }
+
+                app.factory("Auth", Auth);
+
+
+              code.language-javascript.bullet.
+                // `Auth` is undefined
+
+      section
+        h4.bullet "Service is a singleton object"
+        h4.bullet (and so is the Factory)
+        pre.small
+          code.language-javascript.bullet.
+            var uniqueId = 0;
+
+            app.service("Car", function Car() {
+              this._id = ++uniqueId;
+              this.getId = function getId() {
+                return this._id;
+              };
+            });
+
+
+          code.language-javascript.bullet.
+            $injector.invoke(function(Car) {
+              console.log(Car.getId()); // => 1
+            });
+
+          code.language-javascript.bullet.
+            $injector.invoke(function(Car) {
+              console.log(Car.getId()); // => 1
+            });
+
+        h4.bullet Factory's function is initialized only once, and then its' value is stored in the cache.
+
+      section
+        h2.red Other useful provider-like methods:
+        pre.small
+          code.language-javascript.bullet.
+            // function value(name, value)
+            // .value() is just a factory returning given value.
+            app.value('movieTitle', 'The Matrix');
+
+ 
+          code.language-javascript.bullet.
+            // function constant(name, value)
+            // Constants can be injected everywhere,
+            // but can never be changed.
+            app.constant("ENV", "staging");
+
+
+          code.language-javascript.bullet.
+            // function decorator(serviceName, decorFn)
+            app.config(function ($provide) {
+              // Use decorator, to replace existing providers.
+              $provide.decorator('movieTitle', function ($delegate) {
+                return $delegate + ' - starring Keanu Reeves';
+              });
+            });
+
+      section All compared together
+
+      section 
+        h2.red When to use them?
+        ul.thirds
+          li 
+            h4.dark-red Services
+            ul
+              li Singleton objects
+              li Global data available in the whole app
+          li 
+            h4.dark-red Factories
+            ul
+              li Whenever you want to recreate something (Class functions)
+              li f.e. FormObjects.
+          li 
+            h4.dark-red Providers
+            ul
+              li Whenever you use Factory or Service, but need to setup something before the application starts
+              li f.e. external API/library wrappers
+
+      section
+        h2 Real-life examples
+
+      section
+        h3.red 
+          a(href="https://github.com/ninjatronic/ngFacebook") ngFacebook
+          |  - a wrapper for FB api
+        pre.toolong(data-src="examples/ng_facebook.js")
+
+      section
+        h3.red Resources (Repositories?) - to handle data management
+        pre.toolong(data-src="examples/comments_resource.js")
+
+      section
+        h3.red Resources (Repositories?) - to handle data management
+        pre.toolong(data-src="examples/votes_repository.coffee")
+
+      section
+        h3.red Form objects - to handle form validation, data handling and submitting
+        pre.toolong(data-src="examples/form_factory.coffee")
+
+      section
+        h3.red PromiseFactory - small, often usable class function
+        pre.toolong(data-src="examples/promise_factory.js")
+
+      section
+        h3.red ngCordova - wrappers for external APIs
+        pre.toolong(data-src="examples/ng_cordova.js")
+
+      section
+        h2 Last thoughts
+
+      section
+        h3.red Name your objects consequently
+
+      section
+        p.pro Good
+        pre.small
+          code.language-javascript.
+            app.factory("FormFactory", function() {
+              return function FormFactory() { ... };
+            });
+
+            app.factory("UserFormFactory", function(FormFactory) {
+              return function UserFormFactory() { ... };
+            })
+        p (append `...Factory` to inherited Class factory functions)
+
+      section
+        p.con Wrong
+        pre.small
+          code.language-javascript.
+            app.provider("myFacebookProvider", function() { ... });
+            app.config(function(myFacebookProviderProvider) { ... });
+            app.run(function(myFacebookProvider) { ... })
+        p (Angular automatically appends `Provider` to providers in .config() phase)
+        p.con Good
+        pre.small
+          code.language-javascript.
+            app.provider("myFacebook", function() { ... });
+            app.config(function(myFacebookProvider) { ... });
+            app.run(function(myFacebook) { ... })
+
+      section
+        p OK (but not necessary):
+        pre.small
+          code.language-javascript.
+            app.service("UserSettingsService", function() {
+              // some singleton class with global user defined settings
+            });
+            // could be as well just "UserSettings", if it's explicit enough
+
+            app.service("FlashMessagesService", function() {
+              // .set and .getAll() methods
+            });
+            // IMHO better than just "FlashMessages"
+            // "FlashService" would be even better
+        p Always remember: better be explicit, than non-readable.
+        p Even better: be consequent.
+
+      section
+        h3.red Move logic from controllers to external services/factories
+        ul
+          li Helps you to follow the SOLID law
+          li Controller is much more readable
+          li Services are much easier to test
+
+      section
+        h3.red Move logic from controllers to external services/factories
+        h4 Examples
+        ul
+          li Move data storage, data retrieval (http requests) to Resource objects
+          li Move form logic (f.e. validation, submitting) to small directives or factories
+          li Move caching to some service objects
+          li Move filtering to filters
+
+      section
+        h3.red Watchout for circular dependency injection
+        pre.small
+          code.language-javascript.
+            app.service("NotificationService", function(UserSettings){
+              // ...
+              if (UserSettings.allowNotifications()) sendNotifications();
+            });
+
+            app.service("UserSettings", function(NotificationService){
+              // ...
+              this.enableNotifications = function() {
+                NotificationService.sendAll();
+              };
+            });
+
+            // Angular will trigger error in the console:
+            // "Uncaught Error: [$injector:cdep] Circular dependency found:
+            // UserSettings <- NotificationService <- UserSettings"
+
+      section
+        h3.red Organize your code
+        ul.halfs
+          li
+            ul
+              li One class - one file
+              li Group by feature, then eventually by controllers, directives, etc.
+              li Other files, store in `common/` or similar directory
+          li
+            img(src="images/code-organization.png", alt="my organized code")
+
+      section
+        h2 Links
+        .alignleft
+          ul
+            li
+              a(href="https://docs.angularjs.org/guide/providers") docs.angularjs.org: providers
+            li
+              a(href="http://stackoverflow.com/questions/15666048/angular-js-service-vs-provider-vs-factory") stackoverflow: "Service vs Provider vs Factory"
+            li
+              a(href="http://www.mikeobrien.net/blog/angular-consts-values-services-factories-and-providers-oh-my/") blogpost: "Angular Constants, Values, Factories, Services, Providers and Decorators, Oh My!"
+            li
+              a(href="http://iffycan.blogspot.com/2013/05/angular-service-or-factory.html") blogpost: "Angular service or Factory?"
+            li
+              a(href="https://gist.github.com/Mithrandir0x/3639232") gist.github.com: Service, Factory and Provider examples
+            li
+              a(href="http://www.theroks.com/angularjs-factory-vs-service-vs-provider/") blogpost: "AngularJS - Factory vs Service vs Provider"
+            li
+              a(href="http://blog.xebia.com/2013/09/01/differences-between-providers-in-angularjs/") blogpost: "Differences between providers"
+            li
+              a(href="https://medium.com/opinionated-angularjs/scalable-code-organization-in-angularjs-9f01b594bf06") blogpost: "Scalable code organization in AngularJS"
+            li
+              a(href="http://cliffmeyers.com/blog/2013/4/21/code-organization-angularjs-javascript") blogpost: "Code Organization in Large AngularJS and JavaScript Applications"
+
+      section
+        img(src="http://www.soothetube.com/wp-content/uploads/2013/12/all.jpg", alt="That's all, folks!", width="100%")
+
+        h3 Any questions?
+
+        .author.footer
+          | by 
+          strong
+            a(href="http://jtom.me") jacek@jtom.me
+
+      //- section(data-bespoke-state='emphatic')
+      //-   h2 Emphatic Slide!
+      //-   h3 Powered by <a href="https://github.com/markdalgleish/bespoke-state">bespoke-state</a>
+
+    // build:js scripts/scripts.js
+    script(src='bower_components/bespoke.js/dist/bespoke.min.js')
+    script(src='bower_components/bespoke-keys/dist/bespoke-keys.min.js')
+    script(src='bower_components/bespoke-touch/dist/bespoke-touch.min.js')
+    script(src='bower_components/bespoke-bullets/dist/bespoke-bullets.min.js')
+    script(src='bower_components/bespoke-scale/dist/bespoke-scale.min.js')
+    script(src='bower_components/bespoke-hash/dist/bespoke-hash.min.js')
+    script(src='bower_components/bespoke-progress/dist/bespoke-progress.min.js')
+    script(src='bower_components/bespoke-state/dist/bespoke-state.min.js')
+    script(src='bower_components/bespoke-convenient/dist/bespoke-convenient.min.js')
+    script(src='bower_components/bespoke-indexfinger/dist/bespoke-indexfinger.min.js')
+    script(src='bower_components/bespoke-secondary/dist/bespoke-secondary.min.js')
+    script(src='bower_components/prism/components/prism-core.js')
+    script(src='bower_components/prism/components/prism-markup.js')
+    script(src='bower_components/prism/components/prism-css.js')
+    script(src='bower_components/prism/components/prism-clike.js')
+    script(src='bower_components/prism/components/prism-javascript.js')
+    script(src='bower_components/prism/components/prism-coffeescript.js')
+    script(src='scripts/prism-file-highlight.js')
+    script(src='scripts/main.js')
+    // endbuild
