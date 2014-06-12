@@ -50,9 +50,9 @@ module.exports = function(grunt) {
           cwd: 'src/',
           src: [
             '**/*',
-            '!<%= jade.src.files[0].src %>',
-            '!<%= stylus.src.files[0].src %>',
-            '!<%= coffee.src.files[0].src %>'
+            '!<%= jade.src.files[0].cwd %><%= jade.src.files[0].src %>',
+            '!<%= stylus.src.files[0].cwd %><%= stylus.src.files[0].src %>',
+            '!<%= coffee.src.files[0].cwd %><%= coffee.src.files[0].src %>'
           ],
           dest: 'public/'
         }]

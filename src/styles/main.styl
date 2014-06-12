@@ -1,10 +1,17 @@
 @import 'nib' // CSS3 extensions for Stylus: http://visionmedia.github.io/nib/
 
+// My variables
+colors = {
+  "red": #dd1b16,
+  "dark-red": #a6120d,
+  "lighter-gray": #f2f2f2,
+  "light-gray": #b3b3b3
+}
 
 // Global bespoke variables
 slide_width = 640px
 slide_height = 480px
-slide_background = #151515
+slide_background = #282828
 
 slide_transition_length = .6s
 slide_transition_easing = ease
@@ -16,15 +23,9 @@ bullet_transition_length = .3s
 bullet_transition_easing = ease
 bullet_transition_translate_x = 16px
 
-
-// My variables
-red = #dd1b16
-dark-red = #a6120d
-lighter-gray = #f2f2f2
-light-gray = #b3b3b3
-
-primary = red
-
+for name, value in colors
+  .{name}
+    color value
 
 // Mixins
 background-cover(image)
@@ -193,7 +194,7 @@ h1
   line-height: 82px
   letter-spacing: -2px
   margin-bottom: 16px
-  color: red
+  color: colors["red"]
   &.smaller
     font-size 42px
 
@@ -201,16 +202,16 @@ h2
   font-size: 42px
   letter-spacing: -1px
   margin-bottom: 8px
-  color: dark-red
+  color: colors["red"]
   &.smaller
     font-size 28px
 
 h3
-  font-size: 24px
-  font-weight: normal
+  font-size: 30px
+  font-weight: bold
   margin-bottom: 24px
   &.smaller
-    font-size 20px
+    font-size 24px
 
 
 hr
@@ -230,14 +231,28 @@ p
   line-height: 22px
 
 a
-  color: #0089f3
+  color: colors["light-gray"]
   text-decoration: none
+  &:hover
+    text-decoration underline
 
 del
   opacity: .5
 
+blockquote p
+  margin .5em 0
 
-// Custom slides styles
+::selection
+  color: colors["lighter-gray"]
+  background: colors["dark-red"]
+::-moz-selection
+  color: colors["lighter-gray"]
+  background: colors["dark-red"]
+
+// Custom slides classes
+
+.alignleft
+  text-align left
 
 .author
   position absolute
@@ -247,3 +262,46 @@ del
   font-size 1.2em
   a
     color inherit
+
+.parts
+  overflow hidden
+  margin 0
+  padding 0
+  list-style none
+  > li
+    width 33.33%
+    float left
+    display block
+    margin 0
+    padding 0
+
+.halfs
+  @extend .parts
+  > li
+    margin-left 1%
+    width 49%
+
+.thirds
+  @extend .parts
+  > li
+    width 33.33%
+
+.small
+  font-size .6em
+pre.small
+  padding .5em !important
+
+.nostyle
+  line-height inherit
+  color inherit
+
+.con
+  color: #B99844
+
+.pro
+  color: #57B944
+
+.toolong
+  font-size .6em
+  max-height 50em
+  max-width: 100%
