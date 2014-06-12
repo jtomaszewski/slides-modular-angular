@@ -61,30 +61,10 @@ angular.module 'app'
       @$promise
 
 
-angular.module 'gulliver'
-
-.factory 'UserProfileForm', (Auth, AccountResource, FormFactory, $ionicPopup, $location, HostelsResource) ->
+# USAGE
+.factory 'UserProfileForm', (Auth, AccountResource, FormFactory) ->
   class UserProfileForm extends FormFactory
-    hostels: HostelsResource.getAll()
-
     _createSubmitPromise: ->
       AccountResource.update(@user || {}).$promise
       .then (response) ->
         Auth.refreshCurrentUser(response.data.user) if response.data?.user
-
-    destroyAccount: ->
-      $ionicPopup.prompt
-        title: 'Delete your account'
-        subTitle: 'Are you sure? We will remove all your activities and comments.'
-        inputType: 'password'
-        inputPlaceholder: 'Your current password'
-        okType: 'button-assertive'
-      .then (password) =>
-        if password
-          $promise = AccountResource.delete({password}).$promise
-          @_handleRequestPromise $promise, ->
-            Auth.setAuthToken(null)
-            $location.path("/")
-
-    generatePassword: ->
-      @_handleRequestPromise AccountResource.resetPassword().$promise, _.bind(@_onSuccess, @)

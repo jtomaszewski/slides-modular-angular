@@ -1,7 +1,11 @@
-# Gulp - better grunt
-> A [Bespoke.js](http://markdalgleish.com/projects/bespoke.js) presentation, built with [generator-bespoke](https://github.com/markdalgleish/generator-bespoke)
+# Modular Angular
+## Services, Factories, Providers. Resources, Wrappers.
 
-## View slides locally
+How to create modular AngularJS application, which will be easy to be understood and extended?
+
+Presented at [ng-poznan #1](http://akai.org.pl/ng-poznan-meetup-1/) on 12th June 2014.
+
+## How to view slides locally?
 
 First, ensure you have the following installed:
 
